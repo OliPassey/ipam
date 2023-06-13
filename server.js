@@ -1,5 +1,6 @@
 // Load environment variables from .env file
-require('dotenv').config();
+// require('dotenv').config();
+const DATABASE_URL = process.env.DATABASE_URL || 'mongodb://mongodb:27017/ipam';
 
 // Import necessary dependencies
 const express = require('express');
