@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>IP Address Management</title>
+  <link rel="stylesheet" href="/styles/style.css">
+</head>
+<body>
+  <form action="/" method="POST">
+    <input type="text" name="hostName" placeholder="Host Name" required>
+    <input type="text" name="address" placeholder="IP Address" required>
+    <input type="text" name="description" placeholder="Description" required>
+    <input type="text" name="os" placeholder="OS" required>
+    <button type="submit">Add IP</button>
+  </form>
+  <table>
+    <thead>
+      <tr>
+        <th>Host Name</th>
+        <th>IP Address</th>
+        <th>Description</th>
+        <th>OS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% ipAddresses.forEach(ipAddress => { %>
+        <tr>
+          <td><%= ipAddress.hostName %></td>
+          <td><%= ipAddress.address %></td>
+          <td><%= ipAddress.description %></td>
+          <td><%= ipAddress.os %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <a href="/import">Import NMAP Output</a>
+  <script src="/scripts/main.js"></script>
+</body>
+</html>

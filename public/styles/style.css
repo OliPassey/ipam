@@ -1,0 +1,16 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: black;
+  }
+
+table {
+    width: 80%;
+    padding: 10px;
+    background-color: grey;
+}
+
+td {
+    color: white;
+    text-align: center;
+}
+  
