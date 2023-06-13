@@ -22,14 +22,14 @@
       </tr>
     </thead>
     <tbody>
-      <% ipAddresses.forEach(ipAddress => { %>
-        <tr>
-          <td><%= ipAddress.hostName %></td>
-          <td><%= ipAddress.address %></td>
-          <td><%= ipAddress.description %></td>
-          <td><%= ipAddress.os %></td>
-        </tr>
-      <% }) %>
+        <% ipAddresses.forEach(ipAddress => { %>
+            <tr style="background-color: <%= ipAddress.color %>;">
+            <td><%= ipAddress.hostName %></td>
+            <td><%= ipAddress.address %></td>
+            <td><%= ipAddress.description %></td>
+            <td><%= ipAddress.os %></td>
+            </tr>
+        <% }) %>
     </tbody>
   </table>
   <a href="/import">Import NMAP Output</a>

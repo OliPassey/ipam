@@ -46,13 +46,26 @@ const Network = mongoose.model('Network', NetworkSchema);
 // Define route handler for GET requests to the root route
 app.get('/', async (req, res) => {
     let ipAddresses = await IPAddress.find(); // Get all IP Addresses from the database
+    let networks = await Network.find(); // Get all networks from the database
 
     // Sort IP addresses
     ipAddresses.sort((a, b) => ip.toLong(a.address) - ip.toLong(b.address));
+    // console.log(networks); // Add this line to log the networks array
 
-    // Render the 'index' view with the sorted IP addresses
-    res.render('index', { ipAddresses: ipAddresses });
+    // Add network and color information to each IP address
+    ipAddresses = ipAddresses.map(ipAddress => {
+        const network = networks.find(network => ip.cidrSubnet(network.cidr).contains(ipAddress.address));
+        return {
+            ...ipAddress.toObject(),  // Convert the Mongoose document to a plain JavaScript object
+            network: network ? network.name : null,
+            color: network ? network.color : 'white'
+        };
+    });
+
+    // Render the 'index' view with the sorted IP addresses and networks
+    res.render('index', { ipAddresses: ipAddresses, networks: networks });
 });
+
 
 // Define route handler for POST requests to the root route
 app.post('/', async (req, res) => {
@@ -87,6 +100,27 @@ app.get('/networks', async (req, res) => {
     res.redirect('/networks');
   });
   
+// Define route handler for GET requests to the /unused route
+app.get('/unused', async (req, res) => {
+  const networks = await Network.find();
+  const ipAddresses = await IPAddress.find();
+  const usedAddresses = ipAddresses.map(ipAddress => ipAddress.address);
+  const unusedAddresses = [];
+
+  networks.forEach(network => {
+    const subnet = ip.cidrSubnet(network.cidr);
+
+    for (let i = ip.toLong(subnet.firstAddress); i <= ip.toLong(subnet.lastAddress); i++) {
+      const address = ip.fromLong(i);
+
+      if (!usedAddresses.includes(address)) {
+        unusedAddresses.push({address, network: network.name, color: network.color});
+      }
+    }
+  });
+
+  res.render('unused', { addresses: unusedAddresses });
+});
 
 // Define route handler for GET requests to the '/import' route
 app.get('/import', (req, res) => {
