@@ -1,21 +1,84 @@
 body {
-    font-family: Arial, sans-serif;
-    background-color: black;
+    font-family: 'Roboto', sans-serif;
+    background-color: rgb(36, 36, 36);
     color: white;
   }
 
 h1 {
     color: white;
+    font-family: 'Roboto', sans-serif;
 }
 
 table {
     width: 80%;
     padding: 10px;
     background-color: grey;
+    font-family: 'Roboto', sans-serif;
 }
 
 td {
     color: white;
     text-align: center;
+    font-family: 'Roboto', sans-serif;
+    padding: 7px;
 }
+
+th {
+    font-size: 24px;
+    padding: 10px;
+}
+
+input {
+    padding: 10px;
+    border-radius: 10px;
+}
+
+form {
+    padding: 10px;
+}
+.container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.content {
+flex-grow: 1;
+}
+
+.network-info {
+width: 30%;
+background-color: rgb(83, 83, 83);
+padding: 20px;
+border-radius: 5px;
+}
+
+.network-info h2 {
+font-size: 20px;
+margin-top: 0;
+margin-bottom: 10px;
+}
+
+.network-info p {
+margin-top: 0;
+margin-bottom: 5px;
+}
+
+.network-container .unused-addresses {
+display: none;
+}
+
+.network-header .toggle-arrow {
+    display: inline-block;
+    margin-right: 5px;
+    cursor: pointer;
+  }
+  
+  .network-container.collapsed .toggle-arrow::after {
+    content: "▶";
+  }
+  
+  .unused-addresses {
+    padding-left: 20px;
+  }
   

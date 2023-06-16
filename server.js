@@ -23,6 +23,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('public')); // Serve static files from the 'public' directory
 
+
 // Define the MongoDB schema for IP Addresses
 const IPAddressSchema = new mongoose.Schema({
     address: String,
@@ -46,8 +47,10 @@ const Network = mongoose.model('Network', NetworkSchema);
 
 // Define route handler for GET requests to the root route
 app.get('/', async (req, res) => {
-    let ipAddresses = await IPAddress.find(); // Get all IP Addresses from the database
-    let networks = await Network.find(); // Get all networks from the database
+  let ipAddresses = await IPAddress.find();
+  let networks = await Network.find();
+  let usedAddresses = ipAddresses.map(ipAddress => ipAddress.address); // Define usedAddresses array
+  let unusedAddresses = []; // Initialize unusedAddresses array
 
     // Sort IP addresses
     ipAddresses.sort((a, b) => ip.toLong(a.address) - ip.toLong(b.address));
@@ -63,8 +66,21 @@ app.get('/', async (req, res) => {
         };
     });
 
-    // Render the 'index' view with the sorted IP addresses and networks
-    res.render('index', { ipAddresses: ipAddresses, networks: networks });
+    // Populate the unusedAddresses array
+    networks.forEach(network => {
+      const subnet = ip.cidrSubnet(network.cidr);
+
+      for (let i = ip.toLong(subnet.firstAddress); i <= ip.toLong(subnet.lastAddress); i++) {
+        const address = ip.fromLong(i);
+
+        if (!usedAddresses.includes(address)) {
+          unusedAddresses.push(address);
+        }
+      }
+    });
+
+  // Render the 'index' view with the sorted IP addresses, networks, and unusedAddresses
+  res.render('index', { ipAddresses: ipAddresses, networks: networks, unusedAddresses: unusedAddresses });
 });
 
 
@@ -85,21 +101,27 @@ app.post('/', async (req, res) => {
     res.redirect('/');
 });
 
-// Define route handler for GET requests to the /network route
 app.get('/networks', async (req, res) => {
-    const networks = await Network.find();
-    res.render('networks', { networks: networks });
+  const networks = await Network.find();
+  const ipAddresses = await IPAddress.find();
+  const usedAddresses = ipAddresses.map(ipAddress => ipAddress.address);
+  const unusedAddresses = [];
+
+  networks.forEach(network => {
+    const subnet = ip.cidrSubnet(network.cidr);
+
+    for (let i = ip.toLong(subnet.firstAddress); i <= ip.toLong(subnet.lastAddress); i++) {
+      const address = ip.fromLong(i);
+
+      if (!usedAddresses.includes(address)) {
+        unusedAddresses.push(address);
+      }
+    }
   });
-  
-  app.post('/networks', async (req, res) => {
-    const network = new Network({
-      cidr: req.body.cidr,
-      name: req.body.name,
-      color: req.body.color
-    });
-    await network.save();
-    res.redirect('/networks');
-  });
+
+  res.render('networks', { networks: networks, unusedAddresses: unusedAddresses });
+});
+
   
 // Define route handler for GET requests to the /unused route
 app.get('/unused', async (req, res) => {
@@ -130,31 +152,71 @@ app.get('/import', (req, res) => {
 
 // Define route handler for POST requests to the '/import' route
 app.post('/import', async (req, res) => {
-    // Extract the NMAP output from the request body
-    const nmapOutput = req.body.nmapOutput;
-    
-    // Split the NMAP output into lines
-    const lines = nmapOutput.split('\n');
-    
-    // Extract host information from the first line of the NMAP output
-    const hostInfo = lines[0].split(' ');
-    const hostName = hostInfo[4];
-    const ipAddress = hostInfo[5].slice(1, -2);  // remove parentheses and trailing character
+  const nmapOutput = req.body.nmapOutput;
+  const lines = nmapOutput.split('\n');
 
-    // Create a new IPAddress from the extracted host information
-    const newHost = new IPAddress({
-      address: ipAddress,
-      description: hostName,
-      hostName: hostName
-      // Add other fields as necessary
-    });
-    
-    // Save the new IPAddress to the database
-    await newHost.save();
-    
-    // Redirect the client to the root route
-    res.redirect('/');
+  const ipAddresses = await IPAddress.find();
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const match = line.match(/Nmap scan report for (.*) \((.*)\)/);
+
+    if (match) {
+      const hostName = match[1];
+      const ipAddress = match[2];
+
+      const existingHost = ipAddresses.find((ip) => ip.address === ipAddress);
+
+      if (existingHost) {
+        // Update existing host
+        existingHost.hostName = hostName;
+        existingHost.description = hostName;
+        await existingHost.save();
+      } else {
+        // Create new host
+        const newHost = new IPAddress({
+          address: ipAddress,
+          description: hostName,
+          hostName: hostName
+          // Add other fields as necessary
+        });
+        await newHost.save();
+      }
+    }
+  }
+
+  res.redirect('/');
 });
+
+// Define route handler for PATCH requests to update IP Address fields
+app.patch('/ip/:id', async (req, res) => {
+  const id = req.params.id;
+  const { description, os } = req.body;
+
+  try {
+    const ipAddress = await IPAddress.findById(id);
+
+    if (!ipAddress) {
+      return res.status(404).json({ error: 'IP Address not found' });
+    }
+
+    if (description !== undefined) {
+      ipAddress.description = description;
+    }
+
+    if (os !== undefined) {
+      ipAddress.os = os;
+    }
+
+    await ipAddress.save();
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 
 // Define the port the server will listen on
 const PORT = process.env.PORT || 3000;

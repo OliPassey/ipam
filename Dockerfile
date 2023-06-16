@@ -1,5 +1,5 @@
 # Use the official Node.js 16 image from Docker Hub
-FROM node:20.3.0-bullseye
+FROM node:slim
 
 # Set the working directory to /app
 WORKDIR /app

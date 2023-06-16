@@ -34,5 +34,19 @@
       </tr>
     <% }); %>
   </table>
+
+  <div class="network-info">
+    <h2>Network Information</h2>
+    <% networks.forEach(network => { %>
+      <div style="background-color: <%= network.color %>; padding: 10px; margin-bottom: 10px;">
+        <p><strong><%= network.name %>:</strong> <%= network.cidr %></p>
+        <p><strong>Unused Addresses:</strong></p>
+        <% unusedAddresses.forEach(address => { %>
+          <p><%= address %></p>
+        <% }) %>
+      </div>
+    <% }) %>
+  </div>
+  
 </body>
 </html>

@@ -3,36 +3,58 @@
 <head>
   <title>IP Address Management</title>
   <link rel="stylesheet" href="/styles/style.css">
+  <script src="/scripts/main.js" type="text/javascript"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;900&display=swap');
+
+  </style>
 </head>
 <body>
-  <form action="/" method="POST">
-    <input type="text" name="hostName" placeholder="Host Name" required>
-    <input type="text" name="address" placeholder="IP Address" required>
-    <input type="text" name="description" placeholder="Description" required>
-    <input type="text" name="os" placeholder="OS" required>
-    <button type="submit">Add IP</button>
-  </form>
-  <table>
-    <thead>
-      <tr>
-        <th>Host Name</th>
-        <th>IP Address</th>
-        <th>Description</th>
-        <th>OS</th>
-      </tr>
-    </thead>
-    <tbody>
-        <% ipAddresses.forEach(ipAddress => { %>
+  <div class="container">
+    <div class="content">
+      <a href="/import">Import NMAP Output</a> - <a href="/networks">Define Network & Subnets</a>
+      <form action="/" method="POST">
+        <input type="text" name="hostName" placeholder="Host Name" required>
+        <input type="text" name="address" placeholder="IP Address" required>
+        <input type="text" name="description" placeholder="Description" required>
+        <input type="text" name="os" placeholder="OS" required>
+        <button type="submit">Add IP</button>
+      </form>
+      <table>
+        <thead>
+          <tr>
+            <th>Host Name</th>
+            <th>IP Address</th>
+            <th>Description</th>
+            <th>OS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% ipAddresses.forEach(ipAddress => { %>
             <tr style="background-color: <%= ipAddress.color %>;">
-            <td><%= ipAddress.hostName %></td>
-            <td><%= ipAddress.address %></td>
-            <td><%= ipAddress.description %></td>
-            <td><%= ipAddress.os %></td>
+              <td><%= ipAddress.hostName %></td>
+              <td><%= ipAddress.address %></td>
+              <td contenteditable="true" class="editable-field" data-id="<%= ipAddress._id %>" data-field="description"><%= ipAddress.description %></td>
+              <td contenteditable="true" class="editable-field" data-id="<%= ipAddress._id %>" data-field="os"><%= ipAddress.os %></td>
             </tr>
-        <% }) %>
-    </tbody>
-  </table>
-  <a href="/import">Import NMAP Output</a> - <a href="/networks">Define Network & Subnets</a>
-  <script src="/scripts/main.js"></script>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <div class="network-info">
+      <h2>Network Information</h2>
+      <% networks.forEach(network => { %>
+        <div style="background-color: <%= network.color %>; padding: 5px;">
+          <p><strong><%= network.name %>:</strong> <%= network.cidr %></p>
+          <p><strong>Unused Addresses:</strong></p>
+          <% unusedAddresses.forEach(address => { %>
+            <p><%= address %></p>
+          <% }) %>
+        </div>
+      <% }) %>
+    </div>
+    
+    
+  </div>
 </body>
 </html>
