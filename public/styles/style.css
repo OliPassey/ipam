@@ -7,8 +7,26 @@ body {
 h1 {
     color: white;
     font-family: 'Roboto', sans-serif;
+    font-size: 22px;
 }
 
+h2 {
+    color: white;
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+}
+
+a {
+    text-decoration: none;
+}
+
+a:link, a:visited {
+    color: white;
+}
+
+a:hover {
+    color: white;
+}
 table {
     width: 80%;
     padding: 10px;
@@ -81,4 +99,11 @@ display: none;
   .unused-addresses {
     padding-left: 20px;
   }
-  
+
+button {
+  color: white;
+  background-color: orange;
+  height: 40px;
+  width: 120px;
+  border-radius: 15px;
+}
