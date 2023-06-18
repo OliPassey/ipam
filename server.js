@@ -101,6 +101,23 @@ app.post('/', async (req, res) => {
     res.redirect('/');
 });
 
+// Route for POST - networks
+app.post('/networks', async (req, res) => {
+  const { name, cidr, color } = req.body;
+  
+  try {
+    const network = new Network({ name, cidr, color });
+    await network.save();
+    res.redirect('/networks');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+
+// Route for GET - networks
 app.get('/networks', async (req, res) => {
   const networks = await Network.find();
   const ipAddresses = await IPAddress.find();
