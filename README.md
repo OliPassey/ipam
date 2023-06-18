@@ -1,12 +1,12 @@
-# ipam
+<img src="https://github.com/OliPassey/ipam/assets/7745805/9aef48c4-7ed2-4644-9b76-0285144361dc" width="250px">  
+
+# i-pam  
  Personal use IPAM project that is probably of no-use to anyone. Also learning I do not like JavaScript.
 
 ## Description
- A simple MongoDB backed, JS webapp to keep track of IP usage in your network. It is currently just a data-entry tool, it does no scanning or importing* 
- I am playing with importing NMAP output or retrieving DHCP information from PFSense but I promise nothing, ultimately I need a list of IPs in use and got a bit carried away. 🤷‍♂️ Also working on identifying and printing unused addresses**  
-
-*You can now paste in a simple NMAP output and it'll import the lot, or if you already have content it'll update where it finds existing IPs in the database and create new reecords when it doesn't.  
-** If you add in your network information, it'll colour code your subnets in the main table and list unused addresses in each.  
+ A simple MongoDB backed, JS webapp to keep track of IP usage in your network. You can now paste in a simple NMAP output and it'll import the lot, or if you already have content it'll update where it finds existing IPs in the database and create new reecords when it doesn't. If you add in your network information, it'll colour code your subnets in the main table and list unused addresses in each.  
+ The network info is currently printing incorrectly - working on a fix.  
+ Editing "Description" & "OS" is now available, but you must hit save at the bottom to save changes - working on saving when you click away from a field.
 
 ## Installation
 Docker
