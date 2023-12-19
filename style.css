@@ -28,9 +28,9 @@ a:hover {
     color: white;
 }
 table {
-    width: 80%;
+    width: 98%;
     padding: 10px;
-    background-color: grey;
+    background-color: rgb(65, 65, 65);
     font-family: 'Roboto', sans-serif;
 }
 
