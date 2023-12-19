@@ -133,24 +133,24 @@ function formatOpenPorts($openPorts) {
             <a href="networks.php">Manage Subnets / Networks</a>
         </div><br>
         <div class="content">
-            <table>
-                <tr>
-                    <th>IP Address</th>
-                    <th>Hostname</th>
-                    <th>MAC Address</th>
-                    <th>Open Ports</th>
+        <table>
+            <tr>
+                <th>IP Address</th>
+                <th>Hostname</th>
+                <th>MAC Address</th>
+                <th>Open Ports</th>
+            </tr>
+            <?php foreach ($ipAddresses as $ipAddress): ?>
+                <tr style="background-color: <?php echo htmlspecialchars($ipAddress['networkColor'] ?? 'defaultColor'); ?>;">
+                    <td><?php echo htmlspecialchars($ipAddress['address']); ?></td>
+                    <td onclick="editHostname('<?php echo $ipAddress['_id']; ?>', this)">
+                        <?php echo htmlspecialchars(isset($ipAddress['hostName']) && $ipAddress['hostName'] !== '' ? $ipAddress['hostName'] : 'unknown'); ?>
+                    </td>
+                    <td><?php echo htmlspecialchars($ipAddress['macAddress'] ?? 'N/A'); ?></td>
+                    <td><?php echo formatOpenPorts($ipAddress['openPorts'] ?? []); ?></td>
                 </tr>
-                <?php foreach ($ipAddresses as $ipAddress): ?>
-                    <tr style="background-color: <?php echo htmlspecialchars($ipAddress['networkColor'] ?? 'defaultColor'); ?>;">
-                        <td><?php echo htmlspecialchars($ipAddress['address']); ?></td>
-                        <td onclick="editHostname('<?php echo $ipAddress['_id']; ?>', this)">
-                            <?php echo htmlspecialchars($ipAddress['hostName'] ?? 'unknown'); ?>
-                        </td>
-                        <td><?php echo htmlspecialchars($ipAddress['macAddress'] ?? 'N/A'); ?></td>
-                        <td><?php echo formatOpenPorts($ipAddress['openPorts'] ?? []); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </table>
+            <?php endforeach; ?>
+        </table>
         </div>
         <div class="network-info">
             <h2>Network Information</h2>

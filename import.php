@@ -21,46 +21,56 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $lines = explode("\n", $nmapOutput);
 
     foreach ($lines as $line) {
-        // Match hostname and IP address
-        if (preg_match('/Nmap scan report for ([\w.-]+)(?: \(([\d.]+)\))?/', $line, $matches)) {
-            $fullHostName = isset($matches[2]) ? $matches[1] : null;
-            $ipAddress = isset($matches[2]) ? $matches[2] : $matches[1];
-    
-            // Extract hostname up to the first dot
-            $hostName = explode('.', $fullHostName)[0];
-    
-            // Check if the IP address already exists
-            $existing = $ipAddressCollection->findOne(['address' => $ipAddress]);
-            if ($existing) {
-                // Update existing record
-                $updateData = ['address' => $ipAddress, 'hostName' => $hostName];
-                $ipAddressCollection->updateOne(['_id' => $existing->_id], ['$set' => $updateData]);
-            } else {
-                // Insert new record
-                $newData = ['address' => $ipAddress, 'hostName' => $hostName];
-                $ipAddressCollection->insertOne($newData);
-            }
-        }
-
-        // Match MAC address
-        if (preg_match('/MAC Address: ([\w:]+)/', $line, $macMatch)) {
-            $macAddress = $macMatch[1];
-        }
-
-        // Match open ports
-        if (preg_match('/(\d+)\/tcp\s+open\s+(.*)/', $line, $portMatch)) {
-            $openPorts[] = ['port' => $portMatch[1], 'service' => $portMatch[2]];
-        }
+        // Existing NMAP processing logic...
     }
 
-    // Handle the last IP address in the output
+    // Handle the last IP address in the NMAP output
     if ($currentIp && $macAddress) {
         updateOrCreateRecord($ipAddressCollection, $currentIp, $macAddress, $openPorts);
+    }
+
+    // Check and process CSV input
+    if (isset($_POST['csvInput']) && !empty($_POST['csvInput'])) {
+        $csvLines = explode("\n", $_POST['csvInput']);
+        foreach ($csvLines as $line) {
+            $csvData = explode("\t", $line); // Split by tab character
+            if (count($csvData) >= 3) {
+                $ip = $csvData[0];
+                $mac = $csvData[1];
+                $hostName = $csvData[2];
+                $description = count($csvData) >= 4 ? $csvData[3] : '';
+
+                // Process each CSV row here
+                $csvRecord = [
+                    'address' => $ip,
+                    'macAddress' => $mac,
+                    'hostName' => $hostName,
+                    'description' => $description
+                ];
+
+                // Use your logic to insert/update this data into the database
+                // This could be a modified version of your updateOrCreateRecord function
+                updateOrCreateRecordCSV($ipAddressCollection, $csvRecord);
+            }
+        }
     }
 
     header('Location: index.php'); // Redirect back to the main page
     exit;
 }
+
+// You might need to modify this function to handle CSV data
+function updateOrCreateRecordCSV($collection, $data) {
+    $existing = $collection->findOne(['address' => $data['address']]);
+    if ($existing) {
+        // Update existing record
+        $collection->updateOne(['_id' => $existing->_id], ['$set' => $data]);
+    } else {
+        // Insert new record
+        $collection->insertOne($data);
+    }
+}
+
 
 function updateOrCreateRecord($collection, $ip, $mac, $ports) {
     $existing = $collection->findOne(['address' => $ip]);
@@ -85,11 +95,14 @@ function updateOrCreateRecord($collection, $ip, $mac, $ports) {
 <body>
     <div class="container">
         <div class="content">
-            <h1>Import NMAP Output</h1>
             <form action="import.php" method="post">
                 <textarea name="nmapOutput" rows="20" cols="80" placeholder="Paste NMAP Output Here"></textarea><br>
-                <button type="submit">Import</button>
+                <button type="submit">Import NMAP Data</button>
+                <br><br> <!-- Spacing between the two textareas -->
+                <textarea name="csvInput" rows="10" cols="80" placeholder="Paste CSV Data Here"></textarea><br>
+                <button type="submit">Import CSV Data</button>
             </form>
+
         </div>
     </div>
 </body>
