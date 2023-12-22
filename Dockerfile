@@ -2,7 +2,7 @@
 FROM php:8.1-apache
 
 # Install the PHP extensions we need and some utilities including unzip for Composer
-RUN apt-get update && apt-get install -y unzip libpng-dev libjpeg-dev libfreetype6-dev libssl-dev libzip-dev && \
+RUN apt-get update && apt-get install -y unzip libpng-dev libjpeg-dev libfreetype6-dev libssl-dev libzip-dev nmap curl && \
     docker-php-ext-install pdo pdo_mysql gd zip && \
     pecl install mongodb && docker-php-ext-enable mongodb
 
@@ -20,6 +20,9 @@ COPY . .
 
 # Install the PHP dependencies with Composer
 RUN composer install --no-interaction
+
+# Set permissions on out directory
+RUN chown -R www-data:www-data /var/www/html/scans
 
 # Use the default production configuration
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"

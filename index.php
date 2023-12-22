@@ -70,9 +70,17 @@ foreach ($networks as $network) {
     list($ipStart, $ipEnd) = calculateIPRange($network['cidr']);
     $range = range(ip2long($ipStart), ip2long($ipEnd));
     $usedIPs = array_map('ip2long', array_column($ipAddresses, 'address'));
+
+    // Filter out the .0 address (network address)
+    $networkAddress = ip2long($ipStart);
+    $range = array_filter($range, function($ip) use ($networkAddress) {
+        return $ip != $networkAddress;
+    });
+
     $unusedIPs[$network['cidr']] = array_diff($range, $usedIPs);
     $unusedIPs[$network['cidr']] = array_map('long2ip', $unusedIPs[$network['cidr']]);
 }
+
 
 // extract and format open ports 
 function formatOpenPorts($openPorts) {
@@ -86,7 +94,24 @@ function formatOpenPorts($openPorts) {
     return implode(", ", $portList);
 }
 
+function getStatus($lastSeen) {
+    // Check if lastSeen exists
+    if ($lastSeen) {
+        $lastSeenTime = $lastSeen->toDateTime()->getTimestamp();
+        $currentTime = time();
+        $diffDays = ($currentTime - $lastSeenTime) / (60 * 60 * 24);
 
+        if ($diffDays <= 7) {
+            return '<span style="color: green;">●</span>'; // Green icon
+        } elseif ($diffDays <= 30) {
+            return '<span style="color: orange;">●</span>'; // Orange icon
+        } else {
+            return '<span style="color: red;">●</span>'; // Red icon
+        }
+    } else {
+        return '<span>?</span>'; // Question mark for unknown status
+    }
+}
 ?>
 
 <!-- HTML Output -->
@@ -121,16 +146,33 @@ function formatOpenPorts($openPorts) {
                 });
             }
         }
+        function toggleHeader() {
+            var header = document.querySelector('.header');
+            if (header.style.display === 'none' || header.style.display === '') {
+                header.style.display = 'block';
+            } else {
+                header.style.display = 'none';
+            }
+        }
+
+
     </script>
 </head>
 <body>
     <div class="container">
+    <div class="burger-menu" onclick="toggleHeader()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
         <div class="header">
             <h1>I-PAM v0.1</h1>
-            <img src="pam.png" width="250px"><br>
-
-            <a href="import.php">Import NMAP Output</a><br>
-            <a href="networks.php">Manage Subnets / Networks</a>
+            <img src="pam.png" width="175px"><br>
+            <h2>Menu</h2>
+            <a href="import.php">- Import NMAP Scan</a><br>
+            <a href="networks.php">- Subnets / Networks</a><br>
+            <a href="scan_config.php">- Scanning Config</a><br>
+            <a href="scan.php">- Scanning</a><br>
         </div><br>
         <div class="content">
         <table>
@@ -139,19 +181,22 @@ function formatOpenPorts($openPorts) {
                 <th>Hostname</th>
                 <th>MAC Address</th>
                 <th>Open Ports</th>
+                <th>Status</th>
             </tr>
             <?php foreach ($ipAddresses as $ipAddress): ?>
-                <tr style="background-color: <?php echo htmlspecialchars($ipAddress['networkColor'] ?? 'defaultColor'); ?>;">
-                    <td><?php echo htmlspecialchars($ipAddress['address']); ?></td>
-                    <td onclick="editHostname('<?php echo $ipAddress['_id']; ?>', this)">
-                        <?php echo htmlspecialchars(isset($ipAddress['hostName']) && $ipAddress['hostName'] !== '' ? $ipAddress['hostName'] : 'unknown'); ?>
-                    </td>
-                    <td><?php echo htmlspecialchars($ipAddress['macAddress'] ?? 'N/A'); ?></td>
-                    <td><?php echo formatOpenPorts($ipAddress['openPorts'] ?? []); ?></td>
-                </tr>
-            <?php endforeach; ?>
+            <tr style="background-color: <?php echo htmlspecialchars($ipAddress['networkColor'] ?? 'defaultColor'); ?>;">
+                <td><?php echo htmlspecialchars($ipAddress['address']); ?></td>
+                <td onclick="editHostname('<?php echo $ipAddress['_id']; ?>', this)">
+                    <?php echo htmlspecialchars(isset($ipAddress['hostName']) && $ipAddress['hostName'] !== '' ? $ipAddress['hostName'] : 'unknown'); ?>
+                </td>
+                <td><?php echo htmlspecialchars($ipAddress['macAddress'] ?? 'N/A'); ?></td>
+                <td><?php echo formatOpenPorts($ipAddress['openPorts'] ?? []); ?></td>
+                <td><?php echo getStatus($ipAddress['lastSeen'] ?? null); ?></td> <!-- Display status -->
+            </tr>
+        <?php endforeach; ?>
         </table>
         </div>
+        
         <div class="network-info">
             <h2>Network Information</h2>
             <?php foreach ($networks as $network): ?>
@@ -159,6 +204,17 @@ function formatOpenPorts($openPorts) {
                     <p onclick="toggleSubnet('<?php echo htmlspecialchars($network['_id']); ?>')" style="cursor: pointer;">
                         <strong><?php echo htmlspecialchars($network['name']); ?>:</strong> <?php echo htmlspecialchars($network['cidr']); ?>
                     </p>
+                    <!-- Display the next available IP outside the dropdown -->
+                    <p><strong>Next Available IP:</strong> 
+                    <?php 
+                        if (!empty($unusedIPs[$network['cidr']])) {
+                            echo reset($unusedIPs[$network['cidr']]);
+                        } else {
+                            echo 'No IPs available';
+                        }
+                    ?>
+                    </p>
+                    <!-- Dropdown for all unused addresses -->
                     <div id="<?php echo htmlspecialchars($network['_id']); ?>" style="display: none;">
                         <strong>Unused Addresses:</strong>
                         <ul>

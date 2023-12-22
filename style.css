@@ -107,3 +107,27 @@ button {
   width: 120px;
   border-radius: 15px;
 }
+
+.burger-menu {
+    cursor: pointer;
+    display: inline-block;
+    margin: 10px;
+}
+
+.burger-menu span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background-color: rgb(255, 255, 255);
+    margin: 5px 0;
+}
+
+.header {
+    display: block; /* initially visible */
+}
+
+@media screen and (max-width: 768px) {
+    .header {
+        display: none; /* initially hidden on smaller screens */
+    }
+}
