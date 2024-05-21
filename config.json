@@ -1,0 +1,4 @@
+{
+    "mongodb_url": "mongodb://IP:27017/",
+    "mongodb_db": "ipam"
+}
