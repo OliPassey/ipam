@@ -13,6 +13,15 @@ function isValidCIDR($cidr) {
     return preg_match($pattern, $cidr);
 }
 
+function scanComplete($output) {
+    foreach ($output as $line) {
+        if (strpos($line, '# Nmap done') !== false) {
+            return true;
+        }
+    }
+    return false;
+}
+
 foreach ($cidrRanges as $range) {
     if (!isValidCIDR($range)) {
         echo "Invalid CIDR range: $range<br>";
@@ -21,9 +30,9 @@ foreach ($cidrRanges as $range) {
 
     $sanitizedRange = escapeshellarg($range);
     $timestamp = date('Ymd_His');
-    $command = "nmap -T4 -F -oN scans/output_$timestamp.txt $sanitizedRange";
+    $command = "nmap -T4 -F -oN scans/output_$timestamp.txt $sanitizedRange -v";
 
-    // Debugging: Capture output and error
+    // Execute the command
     $output = [];
     $return_var = null;
     exec($command . ' 2>&1', $output, $return_var);
@@ -32,6 +41,12 @@ foreach ($cidrRanges as $range) {
     echo "Command: $command<br>";
     echo "Return Var: $return_var<br>";
     echo "Output:<br><pre>" . implode("\n", $output) . "</pre><br>";
+
+    // Check if scan is complete
+    if (scanComplete($output)) {
+        echo "Scan complete, starting import...<br>";
+        include('auto_import.php');
+    }
 }
 
 echo "All scans are completed.";

@@ -9,6 +9,21 @@ $mongo = new MongoDB\Client($config['mongodb_url']);
 $db = $mongo->selectDatabase($config['mongodb_db']);
 $ipAddressCollection = $db->selectCollection('ipaddresses');
 
+// Function to clean up old scans
+function cleanupOldScans($directory, $excludeFile) {
+    if ($handle = opendir($directory)) {
+        while (false !== ($file = readdir($handle))) {
+            if ($file !== $excludeFile && $file !== "." && $file !== "..") {
+                $filePath = $directory . '/' . $file;
+                if (is_file($filePath)) {
+                    unlink($filePath); // Delete the file
+                }
+            }
+        }
+        closedir($handle);
+    }
+}
+
 // Find the latest NMAP output file
 $scanDir = 'scans/';
 $scanFiles = glob($scanDir . 'output_*.txt');
@@ -56,6 +71,8 @@ if ($currentIp) {
     updateOrCreateRecord($ipAddressCollection, $currentIp, $macAddress, $openPorts);
 }
 
+// Clean up old scans but retain the latest one
+cleanupOldScans($scanDir, basename($latestScanFile));
 
 function updateOrCreateRecord($collection, $ip, $mac, $ports) {
     $currentDate = new MongoDB\BSON\UTCDateTime(); // Current date and time
@@ -88,7 +105,6 @@ function updateOrCreateRecord($collection, $ip, $mac, $ports) {
         $collection->insertOne($data);
     }
 }
-
 
 echo "Auto-import completed.\n";
 ?>

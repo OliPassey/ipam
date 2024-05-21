@@ -1,6 +1,26 @@
 <?php
 require_once 'vendor/autoload.php'; // Load Composer dependencies
 
+// Define the directory where scan results are stored
+$scanDirectory = 'scans';
+function getLatestScanTime($directory) {
+    $latestFile = null;
+    $latestTime = 0;
+    $files = scandir($directory, SCANDIR_SORT_DESCENDING);
+    foreach ($files as $file) {
+        if (is_file($directory . '/' . $file)) {
+            $fileTime = filemtime($directory . '/' . $file);
+            if ($fileTime > $latestTime) {
+                $latestTime = $fileTime;
+                $latestFile = $file;
+            }
+        }
+    }
+    return $latestTime ? date('Y-m-d H:i:s', $latestTime) : 'No scans found';
+}
+// Fetch the latest scan time
+$latestScanTime = getLatestScanTime($scanDirectory);
+
 // func to calculate unused addresses within known subnets
 function calculateIPRange($cidr) {
     list($baseIP, $netmask) = explode('/', $cidr, 2);
@@ -94,24 +114,25 @@ function formatOpenPorts($openPorts) {
     return implode(", ", $portList);
 }
 
-function getStatus($lastSeen) {
-    // Check if lastSeen exists
+function getStatus($lastSeen, $id) {
+    $idStr = (string) $id;  // Convert MongoDB ObjectId to string for JavaScript
     if ($lastSeen) {
         $lastSeenTime = $lastSeen->toDateTime()->getTimestamp();
         $currentTime = time();
-        $diffDays = ($currentTime - $lastSeenTime) / (60 * 60 * 24);
+        $diffDays = floor(($currentTime - $lastSeenTime) / (60 * 60 * 24));
 
         if ($diffDays <= 7) {
-            return '<span style="color: green;">●</span>'; // Green icon
+            return '<span style="color: green;">● Active</span>';
         } elseif ($diffDays <= 30) {
-            return '<span style="color: orange;">●</span>'; // Orange icon
+            return '<span style="color: orange;">● Seen ' . $diffDays . ' days ago</span>';
         } else {
-            return '<span style="color: red;">●</span>'; // Red icon
+            return '<span style="color: red;">● Last Seen ' . $diffDays . ' days ago</span> <a href="#" onclick="deleteRecord(this, \'' . $idStr . '\')" title="Delete Record"><i class="fa fa-trash"></i></a>';
         }
     } else {
-        return '<span>?</span>'; // Question mark for unknown status
+        return '<span>?</span> <a href="#" onclick="deleteRecord(this, \'' . $idStr . '\')" title="Delete Record"><i class="fa fa-trash"></i></a>';
     }
 }
+
 ?>
 
 <!-- HTML Output -->
@@ -120,6 +141,8 @@ function getStatus($lastSeen) {
 <head>
     <title>IP Address Management</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+
     <script>
         function toggleSubnet(subnetId) {
             var x = document.getElementById(subnetId);
@@ -154,9 +177,26 @@ function getStatus($lastSeen) {
                 header.style.display = 'none';
             }
         }
+        function deleteRecord(element, id) {
+        if (confirm('Are you sure you want to delete this record?')) {
+            fetch('deleteRecord.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'id=' + id
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Save the scroll position to localStorage
+                    localStorage.setItem('scrollPosition', window.pageYOffset);
+                    window.location.reload(); // Reload the page to reflect changes
+                } else {
+                    alert('Failed to delete the record.');
+                }
+            });
+        }
+    }
 
-
-    </script>
+</script>
 </head>
 <body>
     <div class="container">
@@ -166,13 +206,14 @@ function getStatus($lastSeen) {
         <span></span>
     </div>
         <div class="header">
-            <h1>I-PAM v0.1</h1>
+            <h1>I-PAM v0.2</h1>
             <img src="pam.png" width="175px"><br>
             <h2>Menu</h2>
             <a href="import.php">- Import NMAP Scan</a><br>
             <a href="networks.php">- Subnets / Networks</a><br>
             <a href="scan_config.php">- Scanning Config</a><br>
-            <a href="scan.php">- Scanning</a><br>
+            <a href="scan.php">- Manual Scan</a><br>
+            <p>Last Scan:<br> <?php echo $latestScanTime; ?></p>
         </div><br>
         <div class="content">
         <table>
@@ -184,16 +225,17 @@ function getStatus($lastSeen) {
                 <th>Status</th>
             </tr>
             <?php foreach ($ipAddresses as $ipAddress): ?>
-            <tr style="background-color: <?php echo htmlspecialchars($ipAddress['networkColor'] ?? 'defaultColor'); ?>;">
+            <tr style="background-color: <?php echo htmlspecialchars($ipAddress['networkColor'] ?? $defaultColor); ?>;">
                 <td><?php echo htmlspecialchars($ipAddress['address']); ?></td>
                 <td onclick="editHostname('<?php echo $ipAddress['_id']; ?>', this)">
                     <?php echo htmlspecialchars(isset($ipAddress['hostName']) && $ipAddress['hostName'] !== '' ? $ipAddress['hostName'] : 'unknown'); ?>
                 </td>
                 <td><?php echo htmlspecialchars($ipAddress['macAddress'] ?? 'N/A'); ?></td>
                 <td><?php echo formatOpenPorts($ipAddress['openPorts'] ?? []); ?></td>
-                <td><?php echo getStatus($ipAddress['lastSeen'] ?? null); ?></td> <!-- Display status -->
+                <td><?php echo getStatus($ipAddress['lastSeen'] ?? null, $ipAddress['_id']); ?></td>
             </tr>
-        <?php endforeach; ?>
+            <?php endforeach; ?>
+
         </table>
         </div>
         
